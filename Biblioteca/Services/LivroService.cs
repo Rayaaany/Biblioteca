@@ -1,77 +1,67 @@
-﻿using Biblioteca.Interfaces;
+﻿using Biblioteca.DAO;
+using Biblioteca.Interfaces;
 using Biblioteca.Models;
 
 namespace Biblioteca.Services
 {
-    // Classe responsável pelas regras de negócio relacionadas ao Livro
     public class LivroService : ILivroService
     {
-        private readonly ILivroDAO _livroDAO;
+        private LivroDAO _livroDAO;
 
-        // Construtor que injeta a dependência do DAO
-        public LivroService(ILivroDAO livroDAO)
+        public LivroService(string connectionString)
         {
-            _livroDAO = livroDAO;
+            _livroDAO = new LivroDAO(connectionString);
         }
 
-        // Chama o DAO para inserir um novo livro
-        public void Inserir(Livro livro)
+        public void AdicionarLivro(string pTitulo, string pGenero, int pAnoPublicacao, int pAutorId)
         {
+            if (string.IsNullOrWhiteSpace(pTitulo))
+                throw new Exception("Título é obrigatório.");
+            if (string.IsNullOrWhiteSpace(pGenero))
+                throw new Exception("Gênero é obrigatório.");
+            if (pAnoPublicacao <= 0)
+                throw new Exception("Ano de publicação inválido.");
+
+            var livro = new Livro
+            {
+                Titulo = pTitulo,
+                Genero = pGenero,
+                AnoPublicacao = pAnoPublicacao,
+                AutorId = pAutorId
+            };
+
             _livroDAO.Inserir(livro);
         }
 
-        // Chama o DAO para listar todos os livros
-        public List<Livro> ListarTodos()
+        public void AtualizarLivro(Livro pLivro)
         {
-            return _livroDAO.ListarTodos();
+            if (pLivro == null)
+                throw new Exception("Livro inválido.");
+
+            if (string.IsNullOrWhiteSpace(pLivro.Titulo))
+                throw new Exception("Título é obrigatório.");
+
+            _livroDAO.Atualizar(pLivro);
         }
 
-        // Chama o DAO para editar um livro existente
-        public void Editar(Livro livro)
+        public Livro BuscarLivro(int pId)
         {
-            _livroDAO.Editar(livro);
+            return _livroDAO.BuscarPorId(pId);
         }
 
-        // Chama o DAO para remover um livro pelo ID
-        public void Remover(int id)
+        public List<Livro> ListarLivrosComAutor()
         {
-            _livroDAO.Remover(id);
+            return _livroDAO.ListarComAutores();
         }
 
-        // Chama o DAO para buscar livros pelo título
-        public List<Livro> BuscarPorTitulo(string titulo)
+        public void RemoverLivro(int pId)
         {
-            return _livroDAO.BuscarPorTitulo(titulo);
-        }
+            Livro livro = _livroDAO.BuscarPorId(pId);
 
-        public void AdicionarLivro(string titulo, string genero, int anoPublicacao, int autorId)
-        {
-            throw new NotImplementedException();
-        }
+            if (livro == null)
+                throw new Exception("O Livro não foi encontrado.");
 
-        public List<Livro> ListarLivros()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Livro BuscarLivro(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AtualizarLivro(Livro livro)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void RemoverLivro(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<Livro> PesquisarLivroPorTitulo(string titulo)
-        {
-            throw new NotImplementedException();
+            _livroDAO.Remover(pId);
         }
     }
 }

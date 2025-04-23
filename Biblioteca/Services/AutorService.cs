@@ -1,77 +1,61 @@
-﻿using Biblioteca.Interfaces;
+﻿using Biblioteca.DAO;
+using Biblioteca.Interfaces;
 using Biblioteca.Models;
 
 namespace Biblioteca.Services
 {
-    // Classe responsável pelas regras de negócio relacionadas ao Autor
     public class AutorService : IAutorService
     {
-        private readonly IAutorDAO _autorDAO;
+        private AutorDAO _autorDAO;
 
-        // Construtor que injeta a dependência do DAO
-        public AutorService(IAutorDAO autorDAO)
+        public AutorService(string connectionString)
         {
-            _autorDAO = autorDAO;
+            _autorDAO = new AutorDAO(connectionString);
         }
 
-        // Chama o DAO para inserir um novo autor
-        public void Inserir(Autor autor)
+        public void AdicionarAutor(string pNome, string pNacionalidade)
         {
-            _autorDAO.Inserir(autor);
+            if (string.IsNullOrWhiteSpace(pNome) || string.IsNullOrWhiteSpace(pNacionalidade))
+                throw new Exception("Nome e Nacionalidade são obrigatórios.");
+
+            var autor = new Autor
+            {
+                Nome = pNome,
+                Nacionalidade = pNacionalidade
+            };
+
+            _autorDAO.Adicionar(autor);
         }
 
-        // Chama o DAO para listar todos os autores
-        public List<Autor> ListarTodos()
+        public void AtualizarAutor(Autor pAutor)
         {
-            return _autorDAO.ListarTodos();
+            if (pAutor == null)
+                throw new Exception("Autor inválido.");
+
+            if (string.IsNullOrWhiteSpace(pAutor.Nome) || string.IsNullOrWhiteSpace(pAutor.Nacionalidade))
+                throw new Exception("Nome e Nacionalidade são obrigatórios.");
+
+            _autorDAO.Atualizar(pAutor);
         }
 
-        // Chama o DAO para editar um autor existente
-        public void Editar(Autor autor)
+        public Autor BuscarAutor(int pId)
         {
-            _autorDAO.Editar(autor);
-        }
-
-        // Chama o DAO para remover um autor pelo ID
-        public void Remover(int id)
-        {
-            _autorDAO.Remover(id);
-        }
-
-        // Chama o DAO para buscar autores pelo nome
-        public List<Autor> BuscarPorNome(string nome)
-        {
-            return _autorDAO.BuscarPorNome(nome);
-        }
-
-        public void AdicionarAutor(string nome, string nacionalidade)
-        {
-            throw new NotImplementedException();
+            return _autorDAO.BuscarPorId(pId);
         }
 
         public List<Autor> ListarAutores()
         {
-            throw new NotImplementedException();
+            return _autorDAO.ListarTodos();
         }
 
-        public Autor BuscarAutor(int id)
+        public void RemoverAutor(int pId)
         {
-            throw new NotImplementedException();
-        }
+            Autor autor = _autorDAO.BuscarPorId(pId);
 
-        public void AtualizarAutor(Autor autor)
-        {
-            throw new NotImplementedException();
-        }
+            if (autor == null)
+                throw new Exception("O Autor não foi encontrado.");
 
-        public void RemoverAutor(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<Autor> PesquisarAutorPorNome(string nome)
-        {
-            throw new NotImplementedException();
+            _autorDAO.Remover(pId);
         }
     }
 }

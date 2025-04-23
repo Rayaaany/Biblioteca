@@ -13,118 +13,126 @@ namespace Biblioteca.DAO
             _connectionString = connectionString;
         }
 
-        // Método para adicionar livro
-        public void Adicionar(Livro livro)
+        public void Inserir(Livro livro)
         {
             using (SqlConnection con = new SqlConnection(_connectionString))
             {
                 string query = "INSERT INTO Livro (Titulo, Genero, AnoPublicacao, AutorId) VALUES (@Titulo, @Genero, @AnoPublicacao, @AutorId)";
 
-                SqlCommand command = new SqlCommand(query, con);
-                command.Parameters.AddWithValue("@Titulo", livro.Titulo);
-                command.Parameters.AddWithValue("@Genero", livro.Genero);
-                command.Parameters.AddWithValue("@AnoPublicacao", livro.AnoPublicacao);
-                command.Parameters.AddWithValue("@AutorId", livro.AutorId);
+                SqlCommand cmd = new SqlCommand(query, con);
+                cmd.Parameters.AddWithValue("@Titulo", livro.Titulo);
+                cmd.Parameters.AddWithValue("@Genero", livro.Genero);
+                cmd.Parameters.AddWithValue("@AnoPublicacao", livro.AnoPublicacao);
+                cmd.Parameters.AddWithValue("@AutorId", livro.AutorId);
 
                 con.Open();
-                command.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
             }
         }
 
-        // Método para atualizar livro
-        public void Atualizar(Livro livro)
+        public void Atualizar(Livro pLivro)
         {
             using (SqlConnection con = new SqlConnection(_connectionString))
             {
                 string query = "UPDATE Livro SET Titulo = @Titulo, Genero = @Genero, AnoPublicacao = @AnoPublicacao, AutorId = @AutorId WHERE Id = @Id";
 
-                SqlCommand command = new SqlCommand(query, con);
-                command.Parameters.AddWithValue("@Id", livro.Id);
-                command.Parameters.AddWithValue("@Titulo", livro.Titulo);
-                command.Parameters.AddWithValue("@Genero", livro.Genero);
-                command.Parameters.AddWithValue("@AnoPublicacao", livro.AnoPublicacao);
-                command.Parameters.AddWithValue("@AutorId", livro.AutorId);
+                SqlCommand cmd = new SqlCommand(query, con);
+                cmd.Parameters.AddWithValue("@Titulo", pLivro.Titulo);
+                cmd.Parameters.AddWithValue("@Genero", pLivro.Genero);
+                cmd.Parameters.AddWithValue("@AnoPublicacao", pLivro.AnoPublicacao);
+                cmd.Parameters.AddWithValue("@AutorId", pLivro.AutorId);
+                cmd.Parameters.AddWithValue("@Id", pLivro.Id);
 
                 con.Open();
-                command.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
             }
         }
 
-        // Método para buscar livro por ID
-        public Livro BuscarPorId(int id)
+        public Livro BuscarPorId(int pId)
         {
             using (SqlConnection con = new SqlConnection(_connectionString))
             {
                 string query = "SELECT * FROM Livro WHERE Id = @Id";
-                SqlCommand command = new SqlCommand(query, con);
-                command.Parameters.AddWithValue("@Id", id);
+                SqlCommand cmd = new SqlCommand(query, con);
+                cmd.Parameters.AddWithValue("@Id", pId);
 
                 con.Open();
-                SqlDataReader reader = command.ExecuteReader();
+                SqlDataReader reader = cmd.ExecuteReader();
 
                 if (reader.Read())
                 {
-                    return new Livro()
+                    Livro livro = new Livro()
                     {
-                        Id = reader.GetInt32(0),
-                        Titulo = reader.GetString(1),
-                        Genero = reader.GetString(2),
-                        AnoPublicacao = reader.GetInt32(3),
-                        AutorId = reader.GetInt32(4)
+                        Id = (int)reader["Id"],
+                        Titulo = reader["Titulo"].ToString(),
+                        Genero = reader["Genero"].ToString(),
+                        AnoPublicacao = (int)reader["AnoPublicacao"],
+                        AutorId = (int)reader["AutorId"]
                     };
+
+                    // Preenche o autor do livro
+                    livro.Autor = new AutorDAO(_connectionString).BuscarPorId(livro.AutorId);
+                    return livro;
                 }
-                else
-                {
-                    return null;
-                }
+
+                return null;
             }
         }
 
-        // Método para deletar livro
-        public void Deletar(int id)
+        public void Remover(int pId)
         {
             using (SqlConnection con = new SqlConnection(_connectionString))
             {
                 string query = "DELETE FROM Livro WHERE Id = @Id";
 
-                SqlCommand command = new SqlCommand(query, con);
-                command.Parameters.AddWithValue("@Id", id);
+                SqlCommand cmd = new SqlCommand(query, con);
+                cmd.Parameters.AddWithValue("@Id", pId);
 
                 con.Open();
-                command.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
             }
         }
 
-        // Método para listar todos os livros
-        public List<Livro> ListarTodos()
+        public List<Livro> ListarComAutores()
         {
-            List<Livro> livros = new List<Livro>();
+            List<Livro> lista = new List<Livro>();
 
             using (SqlConnection con = new SqlConnection(_connectionString))
             {
-                string query = "SELECT * FROM Livro";
+                string query = @"
+                    SELECT l.Id, l.Titulo, l.Genero, l.AnoPublicacao, l.AutorId, a.Nome AS NomeAutor, a.Nacionalidade AS NacionalidadeAutor
+                    FROM Livro l
+                    INNER JOIN Autor a ON l.AutorId = a.Id";
 
-                SqlCommand command = new SqlCommand(query, con);
+                SqlCommand cmd = new SqlCommand(query, con);
 
                 con.Open();
-                SqlDataReader reader = command.ExecuteReader();
+                SqlDataReader reader = cmd.ExecuteReader();
 
                 while (reader.Read())
                 {
                     Livro livro = new Livro()
                     {
-                        Id = reader.GetInt32(0),
-                        Titulo = reader.GetString(1),
-                        Genero = reader.GetString(2),
-                        AnoPublicacao = reader.GetInt32(3),
-                        AutorId = reader.GetInt32(4)
+                        Id = (int)reader["Id"],
+                        Titulo = reader["Titulo"].ToString(),
+                        Genero = reader["Genero"].ToString(),
+                        AnoPublicacao = (int)reader["AnoPublicacao"],
+                        AutorId = (int)reader["AutorId"]
                     };
 
-                    livros.Add(livro);
+                    // Preenche o autor do livro
+                    livro.Autor = new Autor()
+                    {
+                        Id = livro.AutorId,
+                        Nome = reader["NomeAutor"].ToString(),
+                        Nacionalidade = reader["NacionalidadeAutor"].ToString()
+                    };
+
+                    lista.Add(livro);
                 }
             }
 
-            return livros;
+            return lista;
         }
     }
 }

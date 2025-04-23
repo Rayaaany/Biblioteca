@@ -1,14 +1,19 @@
 ﻿using Biblioteca.Models;
+using System.Collections.Generic;
 
 namespace Biblioteca.Interfaces
 {
     public interface ILivroDAO
     {
-        void Adicionar(Livro livro);
-        List<Livro> Listar();
-        Livro BuscarPorId(int id);
+        void Inserir(Livro livro);
         void Atualizar(Livro livro);
+        Livro BuscarPorId(int id);
         void Remover(int id);
-        List<Livro> PesquisarPorTitulo(string titulo);
+        List<Livro> ListarComAutores();
     }
 }
+
+
+
+
+
